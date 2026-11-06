@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: monedis
+    runtime: static
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
