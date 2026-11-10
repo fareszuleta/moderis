@@ -355,11 +355,19 @@ function handleCta() {
   cta.classList.add('loading');
   cta.querySelector('.btn-label').textContent = 'Processing…';
 
-  var delay = iframeReady ? 0 : 1200;
-  setTimeout(function () {
-    triggerRealButton();
-    setTimeout(showSuccess, 900);
-  }, delay);
+  function fire() {
+    // Extra 800ms after load so app.js finishes seeding localStorage
+    setTimeout(function() {
+      triggerRealButton();
+      setTimeout(showSuccess, 900);
+    }, 800);
+  }
+
+  if (iframeReady) {
+    fire();
+  } else {
+    document.getElementById('victim').addEventListener('load', fire, { once: true });
+  }
 }
 
 function showSuccess() {
