@@ -1,6 +1,7 @@
 services:
   - type: web
     name: monedis
-    runtime: static
-    staticPublishPath: .
+    runtime: node
+    buildCommand: ""
+    startCommand: node server.js
     pullRequestPreviewsEnabled: false
