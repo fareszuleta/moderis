@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reset Account Data — Mendis</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-height:100vh; padding:0; }
+.header { width:100%; display:flex; align-items:center; gap:10px; padding:18px 24px; border-bottom:1px solid var(--line); background:var(--surf); }
+.header-logo { width:32px; height:32px; border-radius:9px; background:#2F5BEA; display:flex; align-items:center; justify-content:center; }
+.header-title { font-size:16px; font-weight:700; color:var(--ink); }
+.content { max-width:420px; width:100%; padding:32px 24px 160px; }
+.warning-icon { width:56px; height:56px; border-radius:16px; background:#FEE2E2; display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:20px; }
+h1 { font-size:22px; font-weight:800; color:var(--ink); margin:0 0 10px; line-height:1.2; }
+.desc { font-size:14px; color:var(--muted); line-height:1.65; margin-bottom:24px; }
+.warning-box { background:#FEF2F2; border:1px solid #FECACA; border-radius:12px; padding:14px 16px; margin-bottom:24px; }
+.warning-box p { font-size:13px; color:#B91C1C; margin:0; line-height:1.5; font-weight:500; }
+.items { display:flex; flex-direction:column; gap:8px; margin-bottom:28px; }
+.item { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--muted); }
+.item-dot { width:6px; height:6px; border-radius:50%; background:#EF4444; flex-shrink:0; }
+
+.confirm-btn {
+  position: fixed;
+  bottom: 80px;
+  left: 24px;
+  right: 24px;
+  height: 54px;
+  background: #B91C1C;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(185,28,28,.35);
+  z-index: 10;
+}
+.confirm-btn:active { opacity: .85; }
+
+.done-screen { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:32px; gap:12px; }
+.done-icon { font-size:52px; }
+.done-title { font-size:20px; font-weight:800; color:var(--ink); }
+.done-sub { font-size:14px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div class="header">
+    <div class="header-logo">
+      <svg width="18" height="18" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="23" fill="#2F5BEA"/><path d="M22 46v-4a8 8 0 0 1 8-8h40" stroke="#fff" stroke-width="6" stroke-linecap="round"/><rect x="20" y="42" width="60" height="40" rx="9" stroke="#fff" stroke-width="6"/><rect x="58" y="53" width="25" height="18" rx="6" fill="#fff"/><circle cx="66" cy="62" r="3.4" fill="#2F5BEA"/></svg>
+    </div>
+    <span class="header-title">Mendis · Account Settings</span>
+  </div>
+
+  <div class="content">
+    <div class="warning-icon">⚠️</div>
+    <h1>Reset Account Data</h1>
+    <p class="desc">This will permanently delete all data stored in this browser for your Mendis account. This action cannot be undone.</p>
+
+    <div class="warning-box">
+      <p>⚠ All data will be erased from this device. Make sure you have a backup before continuing.</p>
+    </div>
+
+    <div class="items">
+      <div class="item"><div class="item-dot"></div>All linked cards and balances</div>
+      <div class="item"><div class="item-dot"></div>Full transaction history</div>
+      <div class="item"><div class="item-dot"></div>Savings goals and progress</div>
+      <div class="item"><div class="item-dot"></div>Account preferences</div>
+    </div>
+  </div>
+
+  <button class="confirm-btn" onclick="doReset()">
+    <span>🗑</span> Confirm Data Reset
+  </button>
+</div>
+
+<div class="done-screen" id="done">
+  <div class="done-icon">✅</div>
+  <div class="done-title">Data Reset Complete</div>
+  <div class="done-sub">All account data has been removed from this device.</div>
+</div>
+
+<script>
+function doReset() {
+  try { localStorage.removeItem('mendis.web.v1'); } catch(e) {}
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('done').style.display = 'flex';
+}
+</script>
+</body>
+</html>
